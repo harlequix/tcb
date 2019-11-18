@@ -30,7 +30,6 @@ class FamilyChecker(object):
     def __init__(self, family_map):
         super(FamilyChecker, self).__init__()
         self.family_map = family_map
-        print(family_map)
 
     def same_family(self, node_a, node_b):
         return node_a.digest in self.family_map.keys() and\

@@ -8,7 +8,7 @@ from numpy import array
 from restrictions import same_16_subnet, FamilyChecker, build_family_map
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def filter_exits(relays, fast=None, stable=None):
@@ -30,7 +30,7 @@ def filter_exits(relays, fast=None, stable=None):
 
     """
     ret = [x for x in relays if can_exit(x, fast, stable)]
-    logger.warning(f"#{len(ret)} exit nodes found")
+    logger.debug(f"#{len(ret)} exit nodes found")
     return ret
 
 
@@ -53,7 +53,7 @@ def filter_middle(relays, fast=None, stable=None):
 
     """
     ret = [x for x in relays if can_middle(x, fast, stable)]
-    logger.warning(f"#{len(ret)} middle nodes found")
+    logger.debug(f"#{len(ret)} middle nodes found")
     return ret
 
 
@@ -76,7 +76,7 @@ def filter_guards(relays, fast=None, stable=None):
 
     """
     ret = [x for x in relays if can_guard(x, fast, stable)]
-    logger.warning(f"#{len(ret)} guard nodes found")
+    logger.debug(f"#{len(ret)} guard nodes found")
     return ret
 
 
@@ -224,7 +224,7 @@ def create_circuits(order, guards, middle, exits, weights, restrictions=None, ca
             for cb in callbacks:
                 cb(circuits)
         created += len(circuits)
-        print(f"{len(circuits)} circuits created")
+        logger.debug(f"{len(circuits)} circuits created")
 
 
 def get_bw_weight(flags, position, bw_weights):
@@ -378,7 +378,6 @@ def main():
         consensus = parse_file(args.consensus, 'network-status-consensus-3 1.0', document_handler='DOCUMENT')
     except TypeError:
         print("File {} does not seem to be a valid Tor file")
-    print(type(consensus))
     for document in consensus:
         nodes = [document.routers[x] for x in document.routers]
         middle = filter_middle(nodes)
@@ -399,14 +398,14 @@ def main():
         for line in order_file:
             order = create_order(line)
             exits = filter_exits(nodes)
-            print(f"len of exits before: {len(exits)}")
+            logger.debug(f"len of exits before: {len(exits)}")
             exits = [x for x in exits if can_exit_port(x, order["destination"])]
-            print(f"len of exits after: {len(exits)}")
+            logger.debug(f"len of exits after: {len(exits)}")
             # weights["exits"] = [1/len(exits) for e in exits]
             weights["exits"] = array(assign_weights_by_roles(exits, 10000, "exit", bandwidth_weights))
             weights["exits"] = weights["exits"]/weights["exits"].sum()
-            print(order)
-            print(len(exits))
+            logger.debug(order)
+            logger.debug(len(exits))
             create_circuits(order, guards, middle, exits, weights, callbacks=[print_circuit], restrictions=[same_16_subnet, same_family])
 
 
