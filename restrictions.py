@@ -15,7 +15,7 @@ def build_family_map(descriptors):
     family_counter = 0
     for desc in descriptors:
         if desc.family:
-            digest = desc.digest()
+            digest = desc.digest
             if digest not in family_map.keys():
                 family_map[digest] = family_counter
                 for member in desc.family:

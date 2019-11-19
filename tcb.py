@@ -1,5 +1,6 @@
 """Tor Snapshot Simulator."""
 import argparse
+import os
 from stem import Flag
 from stem.descriptor import parse_file
 import logging
@@ -326,7 +327,7 @@ def create_order(line):
     return order
 
 
-def can_exit_port(exit, destination):
+def can_exit_port(exit, policy, destination):
     """Check if relay allows exit to destination.
 
     Parameters
@@ -345,7 +346,7 @@ def can_exit_port(exit, destination):
     if not destination:
         return True
     port = int(destination.split(":")[1])
-    for rule in exit.exit_policy:
+    for rule in policy:
         if port >= rule.min_port and port <= rule.max_port:
             if rule.is_address_wildcard() or\
                     rule.get_masked_bits() == 0:
@@ -371,11 +372,11 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("order", help="path to order file")
-    parser.add_argument("consensus", help="path to consensus file")
-    parser.add_argument("descriptor", help="path to descriptor file")
+    parser.add_argument("consensus", help="path to microdesc consensus file")
+    parser.add_argument("microdesc_dir", help="path to folder of microdescriptors")
     args = parser.parse_args()
     try:
-        consensus = parse_file(args.consensus, 'network-status-consensus-3 1.0', document_handler='DOCUMENT')
+        consensus = parse_file(args.consensus, 'network-status-microdesc-consensus-3 1.0', document_handler='DOCUMENT')
     except TypeError:
         print("File {} does not seem to be a valid Tor file")
     for document in consensus:
@@ -383,6 +384,8 @@ def main():
         middle = filter_middle(nodes)
         guards = filter_guards(nodes)
         bandwidth_weights = document.bandwidth_weights
+        break
+
     weights = {}
     weights["guards"] = array(assign_weights_by_roles(guards, 10000, "guard", bandwidth_weights))
     weights["guards"] = weights["guards"]/weights["guards"].sum()  # normalize weights
@@ -390,16 +393,29 @@ def main():
     weights["middle"] = array(assign_weights_by_roles(middle, 10000, "middle", bandwidth_weights))
     weights["middle"] = weights["middle"]/weights["middle"].sum()
 
-    with open(args.descriptor, 'rb') as descriptor_file:
-        descriptors = parse_file(descriptor_file)
-        family_map = build_family_map(descriptors)
-        same_family = FamilyChecker(family_map)
+    # collect micro descriptors
+    # also, remember the exit policy for each node, as it is stored in the microdesc
+    microdescs = []
+    exit_policies = dict()
+    for node in nodes:
+        digest = node.digest.lower()
+        microdesc_path = os.path.join(args.microdesc_dir, digest[0], digest[1], digest)
+
+        microdesc = parse_file(microdesc_path, 'microdescriptor 1.0', document_handler='DOCUMENT')
+        for document in microdesc:
+            microdescs.append(document)
+            exit_policies[digest] = document.exit_policy
+            break
+
+    family_map = build_family_map(microdescs)
+    same_family = FamilyChecker(family_map)
+
     with open(args.order) as order_file:
         for line in order_file:
             order = create_order(line)
             exits = filter_exits(nodes)
             logger.debug(f"len of exits before: {len(exits)}")
-            exits = [x for x in exits if can_exit_port(x, order["destination"])]
+            exits = [x for x in exits if can_exit_port(x, exit_policies[x.digest.lower()], order["destination"])]
             logger.debug(f"len of exits after: {len(exits)}")
             # weights["exits"] = [1/len(exits) for e in exits]
             weights["exits"] = array(assign_weights_by_roles(exits, 10000, "exit", bandwidth_weights))
