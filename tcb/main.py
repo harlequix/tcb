@@ -6,7 +6,8 @@ from stem.descriptor import parse_file
 import logging
 from numpy.random import choice
 from numpy import array
-from restrictions import same_16_subnet, FamilyChecker, build_family_map
+# from . import restrictions
+from tcb.restrictions import same_16_subnet, FamilyChecker, build_family_map
 
 logger = logging.getLogger()
 # logger.setLevel(logging.DEBUG)
