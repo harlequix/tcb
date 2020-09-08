@@ -156,6 +156,8 @@ def can_guard(relay, fast, stable):
         ((not fast) or Flag.FAST in relay.flags) and\
         ((not stable) or Flag.STABLE in relay.flags)
 
+def print_num_circuit(circuits):
+    print(len(circuits))
 
 def print_circuit(circuits):
     """Print circuits.
@@ -407,7 +409,7 @@ def main():
             exit_policies[digest] = document.exit_policy
             break
 
-    family_map = build_family_map(microdescs)
+    family_map = build_family_map(microdescs, consensus)
     same_family = FamilyChecker(family_map)
 
     with open(args.order) as order_file:
@@ -422,7 +424,7 @@ def main():
             weights["exits"] = weights["exits"]/weights["exits"].sum()
             logger.debug(order)
             logger.debug(len(exits))
-            create_circuits(order, guards, middle, exits, weights, callbacks=[print_circuit], restrictions=[same_16_subnet, same_family])
+            create_circuits(order, guards, middle, exits, weights, callbacks=[print_num_circuit], restrictions=[same_16_subnet, same_family])
 
 
 if __name__ == '__main__':
