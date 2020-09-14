@@ -1,2 +1,2 @@
 # from tcb.tcb import *
-from tcb.restrictions import *
+from .restrictions import same_16_subnet, FamilyChecker, build_family_map

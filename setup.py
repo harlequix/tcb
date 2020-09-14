@@ -12,9 +12,9 @@ setup(
     author_email='rustseba@informatik.hu-berlin.de',
     url='https://github.com/harlequix/tcb',
     license='MPL-2.0',
-    packages=find_packages(),
+    packages=['tcb'],
     entry_points = {
-        'console_scripts': ['tcb=tcb.main:main'],
+        'console_scripts': ['tcb=tcb.sim:main'],
     },
 #   no dependencies in this example
 #   install_requires=[
@@ -26,6 +26,5 @@ setup(
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.6'],
     )
